@@ -143,7 +143,7 @@ impl RedisServer {
         let _ = self.process.kill();
         let _ = self.process.wait();
         if let redis::ConnectionAddr::Unix(ref path) = *self.get_client_addr() {
-            fs::remove_file(&path).ok();
+            fs::remove_file(path).ok();
         }
     }
 }
