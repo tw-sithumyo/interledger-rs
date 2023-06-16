@@ -221,12 +221,12 @@ mod tests {
 
             let amount = controller.get_amount_left_in_window();
             controller.prepare(amount);
-            controller.reject(amount, &*INSUFFICIENT_LIQUIDITY_ERROR);
+            controller.reject(amount, &INSUFFICIENT_LIQUIDITY_ERROR);
             assert_eq!(controller.get_amount_left_in_window(), 500);
 
             let amount = controller.get_amount_left_in_window();
             controller.prepare(amount);
-            controller.reject(amount, &*INSUFFICIENT_LIQUIDITY_ERROR);
+            controller.reject(amount, &INSUFFICIENT_LIQUIDITY_ERROR);
             assert_eq!(controller.get_amount_left_in_window(), 250);
         }
 
@@ -247,7 +247,7 @@ mod tests {
 
             let amount = controller.get_amount_left_in_window();
             controller.prepare(amount);
-            controller.reject(amount, &*INSUFFICIENT_LIQUIDITY_ERROR);
+            controller.reject(amount, &INSUFFICIENT_LIQUIDITY_ERROR);
             assert_eq!(controller.get_amount_left_in_window(), 1500);
 
             let amount = controller.get_amount_left_in_window();
@@ -312,7 +312,7 @@ mod tests {
 
             controller.prepare(500);
             controller.prepare(500);
-            controller.reject(500, &*INSUFFICIENT_LIQUIDITY_ERROR);
+            controller.reject(500, &INSUFFICIENT_LIQUIDITY_ERROR);
 
             assert_eq!(controller.get_amount_left_in_window(), 0);
         }

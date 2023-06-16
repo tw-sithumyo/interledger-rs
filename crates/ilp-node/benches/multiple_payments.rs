@@ -132,7 +132,7 @@ fn multiple_payments_btp(c: &mut Criterion) {
     let (sender, mut receiver) = channel(RECEIVED_MESSAGE_COUNT_HIGH);
     let client = reqwest::Client::new();
     let req_low = client
-        .post(&format!(
+        .post(format!(
             "http://localhost:{}/accounts/{}/payments",
             node_a_http, "alice_on_a"
         ))
@@ -146,7 +146,7 @@ fn multiple_payments_btp(c: &mut Criterion) {
             "slippage": 0.025 // allow up to 2.5% slippage
         }));
     let req_high = client
-        .post(&format!(
+        .post(format!(
             "http://localhost:{}/accounts/{}/payments",
             node_a_http, "alice_on_a"
         ))
@@ -284,7 +284,7 @@ fn multiple_payments_http(c: &mut Criterion) {
     let (sender, mut receiver) = channel(RECEIVED_MESSAGE_COUNT_HIGH);
     let client = reqwest::Client::new();
     let req_low = client
-        .post(&format!(
+        .post(format!(
             "http://localhost:{}/accounts/{}/payments",
             node_a_http, "alice_on_a"
         ))
@@ -295,7 +295,7 @@ fn multiple_payments_http(c: &mut Criterion) {
             "slippage": 0.025 // allow up to 2.5% slippage
         }));
     let req_high = client
-        .post(&format!(
+        .post(format!(
             "http://localhost:{}/accounts/{}/payments",
             node_a_http, "alice_on_a"
         ))

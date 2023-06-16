@@ -107,7 +107,7 @@ async fn prometheus() {
 
     let check_metrics = move || {
         Client::new()
-            .get(&format!("http://127.0.0.1:{}", prometheus_port))
+            .get(format!("http://127.0.0.1:{}", prometheus_port))
             .send()
             .map_err(|err| eprintln!("Error getting metrics {:?}", err))
             .and_then(|res| {

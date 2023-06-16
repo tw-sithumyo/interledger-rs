@@ -147,7 +147,7 @@ pub async fn create_google_pubsub_wrapper<A: Account + 'static>(
                         fulfillment,
                         timestamp: Utc::now().to_rfc3339(),
                     };
-                    let data = base64::encode(&serde_json::to_string(&record).unwrap());
+                    let data = base64::encode(serde_json::to_string(&record).unwrap());
                     let res = client
                         .post(api_endpoint.as_str())
                         .bearer_auth(token.as_str())
