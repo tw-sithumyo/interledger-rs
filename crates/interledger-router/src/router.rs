@@ -3,7 +3,7 @@ use async_trait::async_trait;
 use interledger_packet::{ErrorCode, RejectBuilder};
 use interledger_service::*;
 use std::str;
-use tracing::{error, trace};
+use tracing::{debug, error};
 
 /// # Interledger Router
 ///
@@ -58,16 +58,22 @@ where
         // Check if we have a direct path for that account or if we need to scan
         // through the routing table
         let dest: &str = &destination;
+        debug!("Finding route for address: \"{}\".", destination);
         if let Some(account_id) = routing_table.get(dest) {
-            trace!(
+            debug!(
                 "Found direct route for address: \"{}\". Account: {}",
-                destination,
-                account_id
+                destination, account_id
             );
             next_hop = Some(*account_id);
         } else if !routing_table.is_empty() {
             let mut matching_prefix = "";
             let routing_table = self.store.routing_table();
+
+            debug!(
+                "Route not found. Scanning through routing table with Prefix: {:#?}.",
+                routing_table
+            );
+
             for (prefix, account) in (*routing_table).iter() {
                 // Check if the route prefix matches or is empty (meaning it's a catch-all address)
                 if (prefix.is_empty() || dest.starts_with(prefix.as_str()))
@@ -78,11 +84,9 @@ where
                 }
             }
             if let Some(account_id) = next_hop {
-                trace!(
+                debug!(
                     "Found matching route for address: \"{}\". Prefix: \"{}\", account: {}",
-                    destination,
-                    matching_prefix,
-                    account_id,
+                    destination, matching_prefix, account_id,
                 );
             }
         } else {
@@ -94,6 +98,7 @@ where
             match self.store.get_accounts(vec![account_id]).await {
                 Ok(mut accounts) => {
                     let request = request.into_outgoing(accounts.remove(0));
+                    debug!("Forwarding request: \"{:?}\"", request);
                     next.send_request(request).await
                 }
                 Err(_) => {

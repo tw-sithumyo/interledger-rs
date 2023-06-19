@@ -695,8 +695,8 @@ where
 
         let broadcasting = !accounts.is_empty();
         if broadcasting {
-            trace!(
-                "Sending route update for epochs {} - {} to accounts: {:?} {}",
+            debug!(
+                "Broadcast: Sending route update for epochs {} - {} to accounts: {:?} {}",
                 from_epoch_index,
                 to_epoch_index,
                 route_update_request,
@@ -734,7 +734,7 @@ where
             }
 
             // Handle the results of the route broadcast attempts
-            trace!("Updating unavailable accounts");
+            debug!("Updating unavailable accounts");
             let mut unavailable_accounts = unavailable_accounts.lock();
             for (account, result) in results.into_iter() {
                 match (account.routing_relation(), result) {
@@ -754,7 +754,7 @@ where
                                 },
                             );
                         }
-                        trace!("Error sending route update to {:?} account {} (id: {}), increased backoff to {}: {:?}",
+                        debug!("Error sending route update to {:?} account {} (id: {}), increased backoff to {}: {:?}",
                             account.routing_relation(), account.username(), account.id(), unavailable_accounts[&account.id()].max, err);
                     }
                     (_, Err(err)) => {
@@ -775,7 +775,7 @@ where
             }
             Ok(())
         } else {
-            trace!("No accounts to broadcast routes to");
+            debug!("No accounts to broadcast routes to");
             Ok(())
         }
     }

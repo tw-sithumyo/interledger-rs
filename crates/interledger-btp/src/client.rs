@@ -9,7 +9,7 @@ use rand::random;
 use thiserror::Error;
 use tokio_tungstenite::connect_async;
 use tokio_tungstenite::tungstenite::Message;
-use tracing::{debug, error, trace};
+use tracing::{debug, error};
 use url::Url;
 
 /// Create a BtpOutgoingService wrapping BTP connections to the accounts specified.
@@ -91,7 +91,7 @@ where
         .get_ilp_over_btp_outgoing_token()
         .map(|s| s.to_vec())
         .unwrap_or_default();
-    debug!("Connecting to {}", url);
+    debug!("Connecting to btp+ url: {}", url);
 
     let (mut connection, _) = connect_async(url.clone())
         .map_err(|err| {
@@ -103,32 +103,34 @@ where
         })
         .await?;
 
-    trace!(
+    debug!(
         "Connected to account {} (UID: {}) (URI: {}), sending auth packet",
         account.username(),
         account_id,
         url
     );
 
+    // prepare btp auth packet.
+    let btp_packet = BtpPacket::Message(BtpMessage {
+        request_id: random(),
+        protocol_data: vec![
+            ProtocolData {
+                protocol_name: "auth".into(),
+                content_type: ContentType::ApplicationOctetStream,
+                data: vec![],
+            },
+            ProtocolData {
+                protocol_name: "auth_token".into(),
+                content_type: ContentType::TextPlainUtf8,
+                data: token,
+            },
+        ],
+    });
+
+    debug!("Sending auth packet: {:?}", btp_packet);
+
     // Send BTP authentication
-    let auth_packet = Message::binary(
-        BtpPacket::Message(BtpMessage {
-            request_id: random(),
-            protocol_data: vec![
-                ProtocolData {
-                    protocol_name: "auth".into(),
-                    content_type: ContentType::ApplicationOctetStream,
-                    data: vec![],
-                },
-                ProtocolData {
-                    protocol_name: "auth_token".into(),
-                    content_type: ContentType::TextPlainUtf8,
-                    data: token,
-                },
-            ],
-        })
-        .to_bytes(),
-    );
+    let auth_packet = Message::binary(btp_packet.to_bytes());
 
     // (right now we just assume they'll close the connection if the auth didn't work)
     let result = connection // this just a stream

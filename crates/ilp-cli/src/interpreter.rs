@@ -376,6 +376,7 @@ fn extract_args<'a>(matches: &'a ArgMatches) -> (&'a str, HashMap<&'a str, &'a s
         .map(|(key, val)| (key, val.unwrap().to_str().unwrap())) // Convert values from bytes to strings
         .collect();
     let auth = args.remove("authorization_key").unwrap();
+    println!("{:?}", args);
     (auth, args)
 }
 

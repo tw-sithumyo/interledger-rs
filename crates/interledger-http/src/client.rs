@@ -10,7 +10,7 @@ use reqwest::{
 };
 use secrecy::{ExposeSecret, SecretString};
 use std::{convert::TryFrom, marker::PhantomData, sync::Arc, time::Duration};
-use tracing::{error, trace};
+use tracing::{error, debug};
 
 /// The HttpClientService implements [OutgoingService](../../interledger_service/trait.OutgoingService)
 /// for sending ILP Prepare packets over to the HTTP URL associated with the provided account
@@ -71,7 +71,7 @@ where
         let ilp_address_clone = ilp_address.clone();
         let self_clone = self.clone();
         if let Some(url) = request.to.get_http_url() {
-            trace!(
+            debug!(
                 "Sending outgoing ILP over HTTP packet to account: {} (URL: {})",
                 request.to.id(),
                 url.as_str()

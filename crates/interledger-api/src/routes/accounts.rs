@@ -22,7 +22,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::convert::TryFrom;
 use std::fmt::Debug;
-use tracing::{debug, error, trace};
+use tracing::{debug, error};
 use uuid::Uuid;
 use warp::{self, reply::Json, Filter, Rejection};
 
@@ -518,6 +518,7 @@ fn notify_user(
     // Anytime something is written to tx, it will reach rx
     // and get converted to a warp::ws::Message
     let rx = rx.map(|notification: PaymentNotification| {
+        debug!("Sending notification to user via WS: {:?}", notification);
         let msg = warp::ws::Message::text(serde_json::to_string(&notification).unwrap());
         Ok(msg)
     });
@@ -543,6 +544,7 @@ fn notify_all_payments(
     let rx = tokio_stream::wrappers::BroadcastStream::new(store.all_payment_subscription());
     let rx = rx.map(|notification: _| {
         let msg = serde_json::to_string(&notification.map_err(|e| e.to_string())).unwrap();
+        debug!("Sending all payment notification via WS: {}", msg);
         Ok(warp::ws::Message::text(msg))
     });
 
@@ -656,7 +658,7 @@ where
     // Try to connect to the account's BTP socket if they have
     // one configured
     if account.get_ilp_over_btp_url().is_some() {
-        trace!("Newly inserted account has a BTP URL configured, will try to connect");
+        debug!("Newly inserted account has a BTP URL configured, will try to connect");
         connect_to_service_account(account.clone(), true, btp).await?
     }
 
@@ -681,7 +683,7 @@ where
     if let Some(se_url) = settlement_engine_url {
         let id = account.id();
         let http_client = SettlementClient::default();
-        trace!(
+        debug!(
             "Sending account {} creation request to settlement engine: {:?}",
             id,
             se_url.clone()
@@ -695,7 +697,7 @@ where
             .await?;
 
         if response.status().is_success() {
-            trace!("Account {} created on the SE", id);
+            debug!("Account {} created on the SE", id);
 
             // We will pre-fund our account with 0, which will return
             // the current settle_to value

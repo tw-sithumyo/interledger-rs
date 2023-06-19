@@ -18,7 +18,7 @@ use std::{convert::TryFrom, iter::IntoIterator, marker::PhantomData, sync::Arc, 
 use stream_cancel::{Trigger, Valve};
 use tokio::time;
 use tokio_tungstenite::tungstenite::Message;
-use tracing::{debug, error, trace, warn};
+use tracing::{debug, error, warn};
 use uuid::Uuid;
 
 const PING_INTERVAL: u64 = 30; // seconds
@@ -75,7 +75,7 @@ async fn handle_message<A: BtpAccount>(
         match parse_ilp_packet(message) {
             // Queues up the prepare packet
             Ok((request_id, Packet::Prepare(prepare))) => {
-                trace!(
+                debug!(
                     "Got incoming Prepare packet on request ID: {} {:?}",
                     request_id,
                     prepare
@@ -86,7 +86,7 @@ async fn handle_message<A: BtpAccount>(
             }
             // Sends the fulfill/reject to the outgoing service
             Ok((request_id, Packet::Fulfill(fulfill))) => {
-                trace!("Got fulfill response to request id {}", request_id);
+                debug!("Got fulfill response to request id {}", request_id);
                 if let Some(channel) = (*pending_requests.lock()).remove(&request_id) {
                     let _ = channel.send(Ok(fulfill)).map_err(|fulfill| error!("Error forwarding Fulfill packet back to the Future that sent the Prepare: {:?}", fulfill));
                 } else {
@@ -97,7 +97,7 @@ async fn handle_message<A: BtpAccount>(
                 }
             }
             Ok((request_id, Packet::Reject(reject))) => {
-                trace!("Got reject response to request id {}", request_id);
+                debug!("Got reject response to request id {}", request_id);
                 if let Some(channel) = (*pending_requests.lock()).remove(&request_id) {
                     let _ = channel.send(Err(reject)).map_err(|reject| error!("Error forwarding Reject packet back to the Future that sent the Prepare: {:?}", reject));
                 } else {
@@ -113,7 +113,7 @@ async fn handle_message<A: BtpAccount>(
             }
         }
     } else if message.is_ping() {
-        trace!("Responding to Ping message from account {}", account.id());
+        debug!("Responding to Ping message from account {}", account.id());
         // Writes back the PONG to the websocket
         let _ = tx_clone
             .unbounded_send(PONG.clone())
@@ -257,7 +257,7 @@ where
                     from: account,
                     prepare,
                 };
-                trace!(
+                debug!(
                     "Handling incoming request {} from account: {} (id: {})",
                     request_id,
                     request.from.username(),
@@ -285,7 +285,7 @@ where
                 }
             }
 
-            trace!("Finished reading from pending_incoming buffer");
+            debug!("Finished reading from pending_incoming buffer");
             Ok::<(), ()>(())
         };
 
@@ -321,7 +321,7 @@ where
             // gotten the response to our outgoing request
             let keep_connections_open = self.close_all_connections.clone();
 
-            trace!(
+            debug!(
                 "Sending outgoing request {} to {} ({})",
                 request_id,
                 request.to.username(),
@@ -402,7 +402,7 @@ where
             if request.to.get_ilp_over_btp_url().is_some()
                 || request.to.get_ilp_over_btp_outgoing_token().is_some()
             {
-                trace!(
+                debug!(
                     "No open connection for account: {}, forwarding request to the next service",
                     request.to.username()
                 );

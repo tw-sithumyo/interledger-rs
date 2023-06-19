@@ -56,7 +56,7 @@ use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, str, str::FromStr, sync::Arc, time::Duration};
 use std::{collections::HashMap, fmt::Display};
 use tokio::sync::broadcast;
-use tracing::{debug, error, trace, warn};
+use tracing::{debug, error, warn};
 use url::Url;
 use uuid::Uuid;
 use zeroize::Zeroize;
@@ -312,7 +312,7 @@ impl RedisStoreBuilder {
                                     return ControlFlow::Continue;
                                 }
                             };
-                            trace!("Subscribed message received for account {}: {:?}", account_id, message);
+                            debug!("Subscribed message received for account {}: {:?}", account_id, message);
                             if payment_publisher.receiver_count() > 0 {
                                 if let Err(err) = payment_publisher.send(message.clone()) {
                                     error!("Failed to send a node-wide payment notification: {:?}", err);
@@ -329,7 +329,7 @@ impl RedisStoreBuilder {
                                         }
                                     });
                                 },
-                                None => trace!("Ignoring message for account {} because there were no open subscriptions", account_id),
+                                None => debug!("Ignoring message for account {} because there were no open subscriptions", account_id),
                             }
                         } else {
                             error!("Invalid Uuid in channel name: {}", channel_name);
@@ -789,7 +789,7 @@ impl StreamNotificationsStore for RedisStore {
         id: Uuid,
         sender: UnboundedSender<PaymentNotification>,
     ) {
-        trace!("Added payment notification listener for {}", id);
+        debug!("Added payment notification listener for {}", id);
         self.subscriptions
             .lock()
             .entry(id)
@@ -875,7 +875,7 @@ impl BalanceStore for RedisStore {
             .invoke_async(&mut self.connection.clone())
             .await?;
 
-        trace!(
+        debug!(
             "Processed prepare with incoming amount: {}. Account {} has balance (including prepaid amount): {} ",
             incoming_amount, from_account_id, balance
         );
@@ -894,7 +894,7 @@ impl BalanceStore for RedisStore {
             .invoke_async(&mut self.connection.clone())
             .await?;
 
-        trace!(
+        debug!(
             "Processed fulfill for account {} for outgoing amount {}. Fulfill call result: {} {}",
             to_account_id,
             outgoing_amount,
@@ -920,7 +920,7 @@ impl BalanceStore for RedisStore {
             .invoke_async(&mut self.connection.clone())
             .await?;
 
-        trace!(
+        debug!(
             "Processed reject for incoming amount: {}. Account {} has balance (including prepaid amount): {}",
             incoming_amount, from_account_id, balance
         );
@@ -938,7 +938,7 @@ impl BalanceStore for RedisStore {
             .invoke_async(&mut self.connection.clone())
             .await?;
 
-        trace!(
+        debug!(
             "Processed account {} for delayed settlement, balance: {}, to_settle: {}",
             to_account_id,
             balance,
@@ -1547,7 +1547,7 @@ impl CcpRoutingStore for RedisStore {
             .ignore();
 
         pipe.query_async(&mut connection).await?;
-        trace!("Saved {} routes to Redis", num_routes);
+        debug!("Saved {} routes to Redis", num_routes);
 
         update_routes(connection, self.routes.clone(), &self.db_prefix).await?;
         Ok(())
@@ -1668,7 +1668,7 @@ impl IdempotentStore for RedisStore {
             ret.get("data"),
             ret.get("input_hash"),
         ) {
-            trace!("Loaded idempotency key {:?} - {:?}", idempotency_key, ret);
+            debug!("Loaded idempotency key {:?} - {:?}", idempotency_key, ret);
             let mut input_hash: [u8; 32] = Default::default();
             input_hash.copy_from_slice(input_hash_slice.as_ref());
             Ok(Some(IdempotentData::new(
@@ -1707,7 +1707,7 @@ impl IdempotentStore for RedisStore {
             .ignore();
         pipe.query_async(&mut connection).await?;
 
-        trace!(
+        debug!(
             "Cached {:?}: {:?}, {:?}",
             idempotency_key,
             status_code,
@@ -1735,7 +1735,7 @@ impl SettlementStore for RedisStore {
             .arg(&*prefixed_key(&self.db_prefix, idempotency_key.as_str()))
             .invoke_async(&mut self.connection.clone())
             .await?;
-        trace!(
+        debug!(
             "Processed incoming settlement from account: {} for amount: {}. Balance is now: {}",
             account_id,
             amount,
@@ -1749,7 +1749,7 @@ impl SettlementStore for RedisStore {
         account_id: Uuid,
         settle_amount: u64,
     ) -> Result<(), SettlementStoreError> {
-        trace!(
+        debug!(
             "Refunding settlement for account: {} of amount: {}",
             account_id,
             settle_amount
@@ -1761,7 +1761,7 @@ impl SettlementStore for RedisStore {
             .invoke_async(&mut self.connection.clone())
             .await?;
 
-        trace!(
+        debug!(
             "Refunded settlement for account: {} of amount: {}. Balance is now: {}",
             account_id,
             settle_amount,
@@ -1895,7 +1895,7 @@ impl LeftoversStore for RedisStore {
         account_id: Uuid,
         uncredited_settlement_amount: (Self::AssetType, u8),
     ) -> Result<(), LeftoversStoreError> {
-        trace!(
+        debug!(
             "Saving uncredited_settlement_amount {:?} {:?}",
             account_id,
             uncredited_settlement_amount
@@ -1923,7 +1923,7 @@ impl LeftoversStore for RedisStore {
         account_id: Uuid,
         local_scale: u8,
     ) -> Result<Self::AssetType, LeftoversStoreError> {
-        trace!("Loading uncredited_settlement_amount {:?}", account_id);
+        debug!("Loading uncredited_settlement_amount {:?}", account_id);
         let amount = self.get_uncredited_settlement_amount(account_id).await?;
         // scale the amount from the max scale to the local scale, and then
         // save any potential leftovers to the store
@@ -1950,7 +1950,7 @@ impl LeftoversStore for RedisStore {
         &self,
         account_id: Uuid,
     ) -> Result<(), LeftoversStoreError> {
-        trace!("Clearing uncredited_settlement_amount {:?}", account_id);
+        debug!("Clearing uncredited_settlement_amount {:?}", account_id);
         self.connection
             .clone()
             .del(uncredited_amount_key(&self.db_prefix, account_id))
@@ -1975,7 +1975,7 @@ async fn update_routes(
         .get(&*prefixed_key(db_prefix, DEFAULT_ROUTE_KEY));
     let (routes, static_routes, default_route): (RouteVec, RouteVec, Option<RedisAccountId>) =
         pipe.query_async(&mut connection).await?;
-    trace!(
+    debug!(
         "Loaded routes from redis. Static routes: {:?}, default route: {:?}, other routes: {:?}",
         static_routes,
         default_route,
@@ -1994,7 +1994,7 @@ async fn update_routes(
         .collect();
     // TODO we may not want to print this because the routing table will be very big
     // if the node has a lot of local accounts
-    trace!("Routing table is: {:?}", routes);
+    debug!("Routing table is: {:?}", routes);
     *routing_table.write() = Arc::new(routes);
     Ok(())
 }

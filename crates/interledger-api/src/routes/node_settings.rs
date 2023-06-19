@@ -14,7 +14,7 @@ use std::{
     collections::HashMap,
     str::{self, FromStr},
 };
-use tracing::{error, trace};
+use tracing::{error, debug};
 use url::Url;
 use uuid::Uuid;
 use warp::{self, reply::Json, Filter, Rejection};
@@ -209,7 +209,7 @@ where
                             .map_err(|err| Rejection::from(ApiError::internal_server_error().detail(err.to_string())))
                             .await?;
                         if response.status().is_success() {
-                            trace!("Account {} created on the SE", account.id());
+                            debug!("Account {} created on the SE", account.id());
                         } else {
                             error!("Error creating account. Settlement engine responded with HTTP code: {}", response.status());
                         }

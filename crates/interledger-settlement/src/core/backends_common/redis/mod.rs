@@ -43,6 +43,7 @@ impl EngineRedisStoreBuilder {
 
     /// Connects to the provided redis_url and returns a Redis connection for the Settlement Engine
     pub async fn connect(&self) -> Result<EngineRedisStore, ()> {
+        println!("{:?}", self.redis_url);
         let client = match Client::open(self.redis_url.clone()) {
             Ok(c) => c,
             Err(err) => {
