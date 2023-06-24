@@ -253,6 +253,10 @@ impl Reply for ApiError {
             "Content-Type",
             HeaderValue::from_static("application/problem+json"),
         );
+        res.headers_mut().insert(
+            "Access-Control-Allow-Origin",
+            HeaderValue::from_static("*"),
+        );
         res
     }
 }

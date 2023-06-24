@@ -381,7 +381,15 @@ where
 
     /// Serves the API at the provided address
     pub async fn bind(self, addr: SocketAddr) {
-        let cors = warp::cors().allow_any_origin();
+        let cors = warp::cors()
+            .allow_any_origin()
+            .allow_credentials(true)
+            .allow_headers(vec![
+                "Content-Type",
+                "Authorization",
+                "Access-Control-Allow-Origin",
+            ])
+            .allow_methods(vec!["GET", "POST", "PUT", "DELETE", "OPTIONS"]);
         warp::serve(self.into_warp_filter().with(cors))
             .bind(addr)
             .await
